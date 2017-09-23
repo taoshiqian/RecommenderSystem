@@ -1,0 +1,13 @@
+该代码的任务是读入文件数据，完成推荐。
+ALS使用ALS方法做矩阵分解，根据矩阵分解结果推荐
+DataConvert数据转换接口
+FactorizationTest矩阵分解的测试函数，不重要
+GradientDescent使用梯度下降方法做矩阵分解
+HelpUtil辅助函数，不重要
+MapID名称和ID的映射机制
+Rating评分的数据结构：用户，物品，评分
+RatingDao对Rating的操作
+test测试用的主函数
+Tester测试的基类
+Tester4使用四字段数据测试
+Tester8使用八字段数据测试

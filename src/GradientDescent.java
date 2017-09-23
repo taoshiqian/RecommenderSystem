@@ -8,14 +8,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GradientDescent {
-    private String trainFilePath = null;//training文件路径
-    private String testFilePath = null; //test文件路径
-    private int factorNum = 20;       //分解因子数（或者叫 特征值数量），即分解后小矩阵的宽度。
-    private int maxOfIter = 200;      //迭代次数
+    private int factorNum = 5;       //分解因子数（或者叫 特征值数量），即分解后小矩阵的宽度。
+    private int maxOfIter = 20;      //迭代次数
     private double alpha = 0.02;      //学习速率
     private double lambda = 0.01;     //正则化参数
-    private int maxOfUsers = 2000;    //最大用户数量
-    private int maxOfItems = 2000;    //最大物品数量（电影……）
+    private int numOfUsers = 2000;    //最大用户数量
+    private int numOfItems = 2000;    //最大物品数量（电影……）
     private double[][] users;    //分解后的用户矩阵
     private double[][] items;    //分解后的物品矩阵（电影……）
     private double[] userBias;   //针对用户的打分偏见，用于优化
@@ -25,36 +23,28 @@ public class GradientDescent {
 
     private void init(Rating rating) throws Exception {
         double divisor = Math.sqrt(factorNum);
-        if (divisor == 0.0) {
-            System.out.println("除以0啦，赶紧看看");
-            return;
-        }
-
-        userBias = new double[maxOfUsers];
-        users = new double[maxOfUsers][factorNum];
-        for (int i = 0; i < maxOfUsers; i++) {
+        userBias = new double[numOfUsers];
+        users = new double[numOfUsers][factorNum];
+        for (int i = 0; i < numOfUsers; i++) {
             userBias[i] = 0.0;
             for (int j = 0; j < factorNum; j++) {
                 users[i][j] = Math.random() / divisor;
             }
         }
-
-        items = new double[maxOfItems][factorNum];
-        itemBias = new double[maxOfItems];
-        for (int i = 0; i < maxOfItems; i++) {
+        items = new double[numOfItems][factorNum];
+        itemBias = new double[numOfItems];
+        for (int i = 0; i < numOfItems; i++) {
             itemBias[i] = 0.0;
             for (int j = 0; j < factorNum; j++) {
                 items[i][j] = Math.random() / divisor;
             }
         }
-
-
         for (int i = 0; i < rating.size(); i++) {
             int userId = rating.getUserId(i);
             int itemId = rating.getItemId(i);
             double rateScore = rating.getRateScore(i);
-            if (userId > maxOfUsers) maxOfUsers = userId;
-            if (itemId > maxOfItems) maxOfItems = itemId;
+            if (userId > numOfUsers) numOfUsers = userId;
+            if (itemId > numOfItems) numOfItems = itemId;
             sumRateScore += rateScore;
         }
         if (rating.size() > 0) avgRateScore = sumRateScore / rating.size();
@@ -69,7 +59,7 @@ public class GradientDescent {
         return ret;
     }
 
-    private void learn(Rating rating) {
+    private void learn(Rating rating) throws Exception{
         for (int iter = 0; iter < maxOfIter; iter++) {
             for (int i = 0; i < rating.size(); i++) {
                 int userId = rating.getUserId(i);
@@ -85,11 +75,12 @@ public class GradientDescent {
                 }
             }
             alpha *= 0.9;
+            //rmseOfTestFile();
         }
     }
 
-    public void rmseOfTest() throws Exception {
-        Rating rating = RatingDao.readFromFile(testFilePath);
+    public void rmseOfTestFile(String testFilePath) throws Exception {
+        Rating rating = RatingDao.readFromFileWithNum(testFilePath);
         double sum = 0.0;
         for(int i=0;i<rating.size();i++){
             int userId = rating.getUserId(i);
@@ -98,25 +89,22 @@ public class GradientDescent {
             double predictScore = predict(userId, itemId);
             double error = RateScore - predictScore;
             sum += Math.pow(error,2);
-            System.out.println(userId+","+itemId+","+RateScore+","+predictScore);
+           // System.out.println(userId+","+itemId+","+RateScore+","+predictScore);
         }
         double rmse = Math.sqrt(sum/rating.size());
         System.out.println(rmse);
     }
 
-    public void train(String trainFilePath, String testFilePath, int factorNum, int maxOfIter, double alpha, double lambda//, int maxOfUsers, int maxOfItems
+    public void train(Rating rating,int factorNum, int maxOfIter, double alpha, double lambda//, int numOfUsers, int numOfItems
     ) throws Exception {
-        this.trainFilePath = trainFilePath;
-        this.testFilePath = testFilePath;
         this.factorNum = factorNum;
         this.maxOfIter = maxOfIter;
         this.alpha = alpha;
         this.lambda = lambda;
-        //this.maxOfUsers = maxOfUsers;
-        //this.maxOfItems = maxOfItems;
-        Rating rating = RatingDao.readFromFile(trainFilePath);
+        this.numOfUsers = rating.getNumOfUsers()+1;
+        this.numOfItems = rating.getNumOfItems()+1;
         init(rating);
         learn(rating);
-        rmseOfTest();
+        //rmseOfTestFile();
     }
 }
